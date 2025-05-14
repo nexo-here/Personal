@@ -5,93 +5,92 @@ const { getPrefix } = global.utils;
 const { commands, aliases } = global.GoatBot;
 
 module.exports = {
- config: {
-	name: "help",
-	version: "2.1",
-	author: "NTKhang & Modified by Nexo",
-	countDown: 5,
-	role: 0,
-	shortDescription: { en: "Show all commands & usage" },
-	longDescription: { en: "View full list of commands or get info about a specific command" },
-	category: "info",
-	guide: { en: "{p}{n} or {p}{n} commandName" },
-	priority: 1,
- },
+  config: {
+    name: "help",
+    version: "2.3",
+    author: "NTKhang & Modified by Nexo",
+    countDown: 5,
+    role: 0,
+    shortDescription: { en: "Show all commands & usage" },
+    longDescription: { en: "View full list of commands or get info about a specific command" },
+    category: "info",
+    guide: { en: "{p}{n} or {p}{n} commandName" },
+    priority: 1
+  },
 
- onStart: async function ({ message, args, event, threadsData, role }) {
-	const { threadID } = event;
-	const prefix = getPrefix(threadID);
+  onStart: async function ({ message, args, event, role }) {
+    const { threadID } = event;
+    const prefix = getPrefix(threadID);
 
-	const helpImages = [
-	 'https://i.imgur.com/xyDcrW3.jpeg',
-	 'https://i.imgur.com/URCFjrS.jpeg',
-	 'https://i.imgur.com/iAHVc1a.jpeg'
-	];
-	const helpImage = helpImages[Math.floor(Math.random() * helpImages.length)];
-	let attachment = null;
-	try {
-	 attachment = await global.utils.getStreamFromURL(helpImage);
-	} catch (e) {
-	 console.log("Image fetch failed:", e.message);
-	}
+    const helpImages = [
+      'https://i.imgur.com/xyDcrW3.jpeg',
+      'https://i.imgur.com/URCFjrS.jpeg',
+      'https://i.imgur.com/iAHVc1a.jpeg'
+    ];
 
-	if (!args[0]) {
-	 // Show full command list by category
-	 const categories = {};
-	 for (const [name, value] of commands) {
-		if (value.config.role > 1 && role < value.config.role) continue;
-		const cat = value.config.category || "Uncategorized";
-		if (!categories[cat]) categories[cat] = [];
-		categories[cat].push(name);
-	 }
+    let attachment = null;
+    try {
+      const url = helpImages[Math.floor(Math.random() * helpImages.length)];
+      attachment = await global.utils.getStreamFromURL(url);
+    } catch (e) {
+      console.log("Image fetch failed:", e.message);
+    }
 
-	 let msg = `┏━━━━━━━━━━━━━━━━━━━┓\n┃ 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧 ┃\n┗━━━━━━━━━━━━━━━━━━━┛\n`;
+    // No arguments: show command list
+    if (!args[0]) {
+      const categories = {};
+      for (const [name, cmd] of commands) {
+        if (cmd.config.role > 1 && role < cmd.config.role) continue;
+        const cat = cmd.config.category || "Uncategorized";
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(name);
+      }
 
-	 for (const category in categories) {
-		msg += `\n【 ${category.toUpperCase()} 】\n`;
-		const list = categories[category].sort();
-		for (let i = 0; i < list.length; i += 3) {
-		 const chunk = list.slice(i, i + 3).map(cmd => `・${cmd}`).join('   ');
-		 msg += `${chunk}\n`;
-		}
-	 }
+      let msg = "╭─────────────⭓\n│   📜 𝗔𝗟𝗟 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n╰─────────────⭓\n";
 
-	 msg += `\nUse "${prefix}help [command]" to get details about any command.\n`;
-	 msg += `Example: ${prefix}help bank`;
+      for (const cat in categories) {
+        msg += `\n• ${cat.toUpperCase()}:\n`;
+        const cmds = categories[cat].sort();
+        for (let i = 0; i < cmds.length; i += 3) {
+          const chunk = cmds.slice(i, i + 3).map(cmd => `» ${cmd}`).join("   ");
+          msg += `   ${chunk}\n`;
+        }
+      }
 
-	 return message.reply({ body: msg, attachment });
-	}
+      msg += `\nℹ️ Use: ${prefix}help [command]\n📌 Example: ${prefix}help bank`;
 
-	// Help for specific command
-	const name = args[0].toLowerCase();
-	const command = commands.get(name) || commands.get(aliases.get(name));
-	if (!command) {
-	 return message.reply(`✘ Command "${name}" not found.`);
-	}
+      return message.reply({ body: msg, attachment });
+    }
 
-	const config = command.config;
-	const usage = config.guide?.en?.replace(/{p}/g, prefix).replace(/{n}/g, config.name) || "No usage guide.";
-	const roleName = roleTextToString(config.role);
+    // Specific command help
+    const name = args[0].toLowerCase();
+    const command = commands.get(name) || commands.get(aliases.get(name));
+    if (!command) return message.reply(`❌ Command "${name}" not found.`);
 
-	let response = `┏━━━『 ${config.name.toUpperCase()} 』━━━┓\n`;
-	response += `┣ Description: ${config.longDescription?.en || "No description"}\n`;
-	response += `┣ Aliases: ${config.aliases?.join(", ") || "None"}\n`;
-	response += `┣ Role: ${roleName}\n`;
-	response += `┣ Version: ${config.version || "1.0"}\n`;
-	response += `┣ Author: ${config.author || "Unknown"}\n`;
-	response += `┣ Cooldown: ${config.countDown || 1}s\n`;
-	response += `┣ Usage: ${usage}\n`;
-	response += `┗━━━━━━━━━━━━━━━━━━━━┛`;
+    const cfg = command.config;
+    const usage = cfg.guide?.en?.replace(/{p}/g, prefix).replace(/{n}/g, cfg.name) || "No usage guide.";
+    const roleName = roleTextToString(cfg.role);
 
-	return message.reply({ body: response });
- }
+    const res = `
+╭───『 ℹ️ ${cfg.name.toUpperCase()} COMMAND 』───╮
+│ 📝 Description: ${cfg.longDescription?.en || "No description"}
+│ 🧩 Aliases: ${cfg.aliases?.join(", ") || "None"}
+│ 🔒 Role: ${roleName}
+│ 🧑‍💻 Author: ${cfg.author || "Unknown"}
+│ ⏱️ Cooldown: ${cfg.countDown || 1}s
+│ 🧾 Version: ${cfg.version || "1.0"}
+│ 📚 Usage: ${usage}
+╰────────────────────────────────╯`.trim();
+
+    return message.reply({ body: res });
+  }
 };
 
 function roleTextToString(role) {
- switch (role) {
-	case 0: return "All users";
-	case 1: return "Group admins";
-	case 2: return "Bot admins";
-	default: return "Unknown";
- }
+  switch (role) {
+    case 0: return "All users";
+    case 1: return "Group admins";
+    case 2: return "Bot admins";
+    default: return "Unknown";
+  }
 }
