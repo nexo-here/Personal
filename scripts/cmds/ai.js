@@ -26,7 +26,7 @@ module.exports = {
       return api.sendMessage("Please provide a message to ask GPT.", event.threadID, event.messageID);
     }
 
-    const apiKey = "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"; // এখানে তোমার OpenRouter API Key বসাও
+    const apiKey = "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"; // এখানে তোমার OpenRouter API Key বসাও
 
     try {
       const res = await axios.post(
