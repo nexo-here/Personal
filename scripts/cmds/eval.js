@@ -1,74 +1,39 @@
-const { removeHomeDir, log } = global.utils;
-
 module.exports = {
-	config: {
-		name: "eval",
-		version: "1.6",
-		author: "NTKhang",
-		countDown: 5,
-		role: 2,
-		description: {
-			vi: "Test code nhanh",
-			en: "Test code quickly"
-		},
-		category: "owner",
-		guide: {
-			vi: "{pn} <đoạn code cần test>",
-			en: "{pn} <code to test>"
-		}
-	},
+  config: {
+    name: "eval",
+    version: "1.0",
+    author: "nexo_here",
+    countDown: 5,
+    role: 2, // শুধু bot owner বা admin চালাতে পারবে
+    shortDescription: { en: "Evaluate JavaScript code" },
+    longDescription: { en: "Run JavaScript code dynamically and return output" },
+    category: "developer",
+    guide: { en: "{pn} <code>" }
+  },
 
-	langs: {
-		vi: {
-			error: "❌ Đã có lỗi xảy ra:"
-		},
-		en: {
-			error: "❌ An error occurred:"
-		}
-	},
+  onStart: async function({ api, event, args }) {
+    if (!args.length) return api.sendMessage("Please provide JavaScript code to evaluate.", event.threadID, event.messageID);
 
-	onStart: async function ({ api, args, message, event, threadsData, usersData, dashBoardData, globalData, threadModel, userModel, dashBoardModel, globalModel, role, commandName, getLang }) {
-		function output(msg) {
-			if (typeof msg == "number" || typeof msg == "boolean" || typeof msg == "function")
-				msg = msg.toString();
-			else if (msg instanceof Map) {
-				let text = `Map(${msg.size}) `;
-				text += JSON.stringify(mapToObj(msg), null, 2);
-				msg = text;
-			}
-			else if (typeof msg == "object")
-				msg = JSON.stringify(msg, null, 2);
-			else if (typeof msg == "undefined")
-				msg = "undefined";
+    const code = args.join(" ");
 
-			message.reply(msg);
-		}
-		function out(msg) {
-			output(msg);
-		}
-		function mapToObj(map) {
-			const obj = {};
-			map.forEach(function (v, k) {
-				obj[k] = v;
-			});
-			return obj;
-		}
-		const cmd = `
-		(async () => {
-			try {
-				${args.join(" ")}
-			}
-			catch(err) {
-				log.err("eval command", err);
-				message.send(
-					"${getLang("error")}\\n" +
-					(err.stack ?
-						removeHomeDir(err.stack) :
-						removeHomeDir(JSON.stringify(err, null, 2) || "")
-					)
-				);
-			}
-		})()`;
-		eval(cmd);
-	}
+    // Simple blacklist keywords to avoid dangerous eval
+    const blacklist = ["process", "require", "fs", "child_process", "eval", "Function", "constructor"];
+    if (blacklist.some(word => code.includes(word))) {
+      return api.sendMessage("This code contains forbidden keywords.", event.threadID, event.messageID);
+    }
+
+    try {
+      let evaled = eval(code);
+
+      if (typeof evaled !== "string") {
+        evaled = require("util").inspect(evaled, { depth: 1 });
+      }
+
+      if (evaled.length > 1900) evaled = evaled.slice(0, 1900) + "...";
+
+      api.sendMessage("Result:\n" + evaled, event.threadID, event.messageID);
+    } catch (error) {
+      api.sendMessage("Error:\n" + error.message, event.threadID, event.messageID);
+    }
+  }
 };
