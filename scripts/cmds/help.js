@@ -23,9 +23,9 @@ module.exports = {
     const prefix = getPrefix(threadID);
 
     const helpImages = [
-      'https://i.imgur.com/xyDcrW3.jpeg',
-      'https://i.imgur.com/URCFjrS.jpeg',
-      'https://i.imgur.com/iAHVc1a.jpeg'
+      'https://i.ibb.co/WNdxv777/image.gif',
+      'https://i.ibb.co/Lddm1GvG/image.gif',
+      'https://i.ibb.co/My0gMCQY/image.gif'
     ];
 
     let attachment = null;
@@ -57,7 +57,7 @@ module.exports = {
         }
       }
 
-      msg += `\nℹ️ Use: ${prefix}help [command]\n📌 Example: ${prefix}help bank`;
+      msg += `\nℹ️ Use: ${prefix}help [command]\n📌 Example: ${prefix}help bank\n\nOener: Neoaz ギ`;
 
       return message.reply({ body: msg, attachment });
     }
