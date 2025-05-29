@@ -57,7 +57,7 @@ module.exports = {
         }
       }
 
-      msg += `\nℹ️ Use: ${prefix}help [command]\n📌 Example: ${prefix}help bank\n\nOener: Neoaz ギ`;
+      msg += `\nℹ️ Use: ${prefix}help [command]\n📌 Example: ${prefix}help ai\n\nOwner: Neoaz ギ`;
 
       return message.reply({ body: msg, attachment });
     }
