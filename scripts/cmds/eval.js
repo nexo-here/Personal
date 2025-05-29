@@ -31,48 +31,46 @@ module.exports = {
 		}
 	},
 
-	onStart: async function ({ api, args, message, event, threadsData, usersData, dashBoardData, globalData, threadModel, userModel, dashBoardModel, globalModel, role, commandName, getLang }) {
+	onStart: async function ({ api, args, message, getLang }) {
 		function output(msg) {
-			if (typeof msg == "number" || typeof msg == "boolean" || typeof msg == "function")
-				msg = msg.toString();
-			else if (msg instanceof Map) {
-				let text = `Map(${msg.size}) `;
-				text += JSON.stringify(mapToObj(msg), null, 2);
-				msg = text;
-			}
-			else if (typeof msg == "object")
-				msg = JSON.stringify(msg, null, 2);
-			else if (typeof msg == "undefined")
-				msg = "undefined";
+			try {
+				if (typeof msg === "function" || typeof msg === "boolean" || typeof msg === "number")
+					msg = msg.toString();
+				else if (msg instanceof Map) {
+					let text = `Map(${msg.size}) `;
+					text += JSON.stringify(mapToObj(msg), null, 2);
+					msg = text;
+				}
+				else if (typeof msg === "object")
+					msg = JSON.stringify(msg, null, 2);
+				else if (typeof msg === "undefined")
+					msg = "undefined";
 
-			message.reply(msg);
+				message.reply(msg);
+			} catch (err) {
+				message.reply(`${getLang("error")}\n${removeHomeDir(err.stack || err.message)}`);
+			}
 		}
+
 		function out(msg) {
 			output(msg);
 		}
+
 		function mapToObj(map) {
 			const obj = {};
-			map.forEach(function (v, k) {
-				obj[k] = v;
-			});
+			for (const [key, value] of map.entries()) {
+				obj[key] = value;
+			}
 			return obj;
 		}
-		const cmd = `
-		(async () => {
-			try {
-				${args.join(" ")}
-			}
-			catch(err) {
-				log.err("eval command", err);
-				message.send(
-					"${getLang("error")}\\n" +
-					(err.stack ?
-						removeHomeDir(err.stack) :
-						removeHomeDir(JSON.stringify(err, null, 2))
-					)
-				);
-			}
-		})()`;
-		eval(cmd);
+
+		const code = args.join(" ");
+		try {
+			const result = await eval(`(async () => { ${code} })()`);
+			if (result !== undefined) output(result);
+		} catch (err) {
+			log.err("eval command", err);
+			message.reply(`${getLang("error")}\n${removeHomeDir(err.stack || JSON.stringify(err, null, 2))}`);
+		}
 	}
 };
