@@ -8,7 +8,7 @@ module.exports = {
     role: 0,
     shortDescription: { en: "Generate AI image (fast & free)" },
     longDescription: { en: "Use lightweight image API without API key" },
-    category: "ai",
+    category: "AI-IMAGE",
     guide: { en: "{pn} a fantasy dragon flying in the sky" }
   },
 
