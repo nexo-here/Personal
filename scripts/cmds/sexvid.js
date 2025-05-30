@@ -4,7 +4,7 @@
 module.exports = {
   config: {
     name: "sexvid",
-    aliases: ["sex","sex"],
+    aliases: ["sex","sexvid"],
     version: "2.0",
     author: "kshitiz",
     countDown: 30,
