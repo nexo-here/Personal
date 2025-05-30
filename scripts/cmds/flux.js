@@ -11,7 +11,7 @@ module.exports = {
     role: 0,
     shortDescription: "Generate ultra-realistic AI images",
     longDescription: "Use Flux API to generate premium, hyper-realistic AI images with style options",
-    category: "ai",
+    category: "AI-IMAGE",
     guide: {
       en: "{pn} <prompt> | [style]\n\n📌 Example:\n{pn} a lion in desert | realistic\n{pn} warrior girl with sword | anime"
     }
