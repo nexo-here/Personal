@@ -7,10 +7,10 @@ module.exports = {
     version: "1.0",
     author: "nexo_here",
     countDown: 20,
-    role: 0,
+    role: 2,
     shortDescription: "Search and download videos from KatorSex API",
     longDescription: "Search NSFW videos by keyword and download them",
-    category: "adult",
+    category: "18+",
     guide: {
       en: "{pn} <search keyword>"
     }
