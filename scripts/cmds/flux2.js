@@ -11,7 +11,7 @@ module.exports = {
     role: 0,
     shortDescription: "Generate AI image using Flux v2 API",
     longDescription: "Generate image from text prompt using BetaDash Flux v2",
-    category: "ai",
+    category: "AI-IMAGE",
     guide: {
       en: "{pn} <prompt>"
     }
