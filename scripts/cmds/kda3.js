@@ -16,7 +16,7 @@ module.exports = {
     role: 2,
     shortDescription: "",
     longDescription: "get kanda video/ hilake sojaa",
-    category: "𝟭𝟴+",
+    category: "18+",
     guide: "{p}{n} on / off",
   },
 
