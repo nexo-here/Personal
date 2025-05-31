@@ -1,6 +1,3 @@
-// Modified by NEXXO ☠️
-// Anti-Ban features added: User-Agent rotation, request delays, retry with backoff, proxy validation, presence throttle.
-
 "use strict";
 
 const utils = require("./utils");
@@ -14,6 +11,11 @@ log.maxRecordSize = defaultLogRecordSize;
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function delayRandom() {
+  const ms = 1000 + Math.floor(Math.random() * 2000); // 1-3 সেকেন্ড random delay
+  return delay(ms);
 }
 
 const userAgents = [
@@ -81,6 +83,7 @@ function setOptions(globalOptions, options) {
         } else {
           globalOptions.proxy = options.proxy;
           utils.setProxy(globalOptions.proxy);
+          log.info("setOptions", `Proxy enabled: ${globalOptions.proxy}`);
         }
         break;
       case 'autoReconnect':
@@ -155,10 +158,10 @@ function buildAPI(globalOptions, html, jar) {
   });
   api.listen = api.listenMqtt;
 
-  // Add presence update with throttle
+  // Add presence update with throttle (max 1 per minute)
   api.updatePresenceThrottled = (presence) => {
     const now = Date.now();
-    if (now - ctx.lastPresenceUpdate > 60000) { // max 1 update per minute
+    if (now - ctx.lastPresenceUpdate > 60000) { // 1 মিনিট থ্রোটল
       if (typeof api.updatePresence === 'function') {
         api.updatePresence(presence);
         ctx.lastPresenceUpdate = now;
@@ -178,8 +181,9 @@ async function safeApiCall(apiFunc, maxRetries = 3) {
     try {
       return await apiFunc();
     } catch (err) {
-      log.warn('safeApiCall', `Attempt ${i + 1} failed, retrying in ${1000 * 2 ** i}ms...`);
-      await delay(1000 * 2 ** i);
+      const wait = 1000 * 2 ** i + Math.floor(Math.random() * 500);
+      log.warn('safeApiCall', `Attempt ${i + 1} failed, retrying in ${wait}ms...`);
+      await delay(wait);
     }
   }
   throw new Error("All retry attempts failed.");
@@ -187,7 +191,6 @@ async function safeApiCall(apiFunc, maxRetries = 3) {
 
 function loginHelper(appState, email, password, globalOptions, callback, prCallback) {
   const jar = utils.getJar();
-  let mainPromise;
 
   if (!appState) {
     throw { error: "No appState provided. Email/password login is unsupported to prevent ban." };
@@ -198,25 +201,27 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
     const arrayAppState = [];
     appState.split(';').forEach(c => {
       const [key, value] = c.split('=');
-      arrayAppState.push({
-        key: key.trim(),
-        value: value.trim(),
-        domain: "facebook.com",
-        path: "/",
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 2)
-      });
+      if (key && value) {
+        arrayAppState.push({
+          key: key.trim(),
+          value: value.trim(),
+          domain: "facebook.com",
+          path: "/",
+          expires: Date.now() + 1000 * 60 * 60 * 24 * 365 * 2 // 2 বছর মেয়াদ
+        });
+      }
     });
     appState = arrayAppState;
   }
 
   appState.forEach(c => {
-    const str = `${c.key}=${c.value}; domain=${c.domain}; path=${c.path}; expires=${new Date(c.expires).toUTCString()}`;
-    jar.setCookie(str, `https://${c.domain}`);
+    const cookieString = `${c.key}=${c.value}; domain=${c.domain}; path=${c.path}; expires=${new Date(c.expires).toUTCString()}`;
+    jar.setCookie(cookieString, `https://${c.domain}`);
   });
 
-  mainPromise = utils.get('https://www.facebook.com/', jar, null, globalOptions, { noRef: true })
+  let mainPromise = utils.get('https://www.facebook.com/', jar, null, globalOptions, { noRef: true })
     .then(async res => {
-      await delay(1500); // Delay to reduce request spam
+      await delayRandom(); // Random delay 1-3 সেকেন্ড
       return utils.saveCookies(jar)(res);
     });
 
@@ -266,14 +271,27 @@ function login(loginData, options, callback) {
 
   if (typeof callback !== 'function') {
     return new Promise((resolve, reject) => {
-      loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, (err, api) => {
+      login(loginData, globalOptions, (err, api) => {
         if (err) return reject(err);
         resolve(api);
       });
     });
   }
 
-  loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, callback);
+  if (typeof loginData === 'string' || Array.isArray(loginData)) {
+    // cookie string or array login
+    loginHelper(loginData, null, null, globalOptions, callback);
+  } else if (typeof loginData === 'object' && loginData !== null) {
+    if (!loginData.appState && !loginData.cookies) {
+      return callback({ error: "No appState or cookies provided. Email/password login is unsupported to prevent ban." });
+    }
+
+    const appState = loginData.appState || loginData.cookies;
+
+    loginHelper(appState, loginData.email, loginData.password, globalOptions, callback);
+  } else {
+    callback({ error: "Invalid login data provided." });
+  }
 }
 
 module.exports = login;
