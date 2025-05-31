@@ -3,45 +3,29 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "ai",
-    aliases: ["gpt", "cohere", "gemini"],
+    aliases: ["ask", "gpt4"],
     version: "1.0",
-    author: "nexo_here",
-    countDown: 3,
-    role: 0,
-    shortDescription: "AI chat with Cohere",
-    longDescription: "Ask anything to AI using Cohere API",
+    author: "Cliffvincent & Nexo",
+    shortDescription: "Ask GPT-4 Omni anything",
+    longDescription: "Sends a prompt to GPT-4 API and replies with AI response (text only).",
     category: "ai",
-    guide: {
-      en: "{p}ai [your message]"
-    }
+    guide: "{pn} <your question>",
+    usages: "{pn} what is quantum computing?"
   },
 
-  onStart: async function ({ message, args }) {
+  onStart: async function ({ api, event, args }) {
     const prompt = args.join(" ");
-    if (!prompt) return message.reply("⚠️ | Please provide a prompt.");
+    if (!prompt) return api.sendMessage("❌ Please provide a question or prompt.", event.threadID, event.messageID);
 
     try {
-      const res = await axios.post(
-        "https://api.cohere.ai/v1/generate",
-        {
-          model: "command-r-plus",
-          prompt: prompt,
-          max_tokens: 300,
-          temperature: 0.7
-        },
-        {
-          headers: {
-            "Authorization": "Bearer DvfNWwBvqtdYF6iXKUeOtUdqiJwSMIPRJo6KYkJh",
-            "Content-Type": "application/json"
-          }
-        }
-      );
+      const res = await axios.get(`https://betadash-api-swordslush-production.up.railway.app/gpt4?ask=${encodeURIComponent(prompt)}`);
+      const { content } = res.data;
 
-      const reply = res.data.generations[0].text.trim();
-      message.reply(reply || "❌ | No response from AI.");
+      return api.sendMessage(`${content}`, event.threadID, event.messageID);
+
     } catch (err) {
-      console.error("Error:", err.response?.data || err.message);
-      message.reply("❌ | AI সার্ভারে সমস্যা হয়েছে।");
+      console.error(err);
+      return api.sendMessage("❌ Failed to connect to GPT-4 API.", event.threadID, event.messageID);
     }
   }
 };
